@@ -37,6 +37,19 @@ export const config = {
   rateLimitMax: envInt('RATE_LIMIT_MAX', 60),
 
   logPretty: envBool('LOG_PRETTY', process.env.NODE_ENV !== 'production'),
+
+  // Phase 4: guest-only auth (no passwords) - see backend/README.md for why
+  // this is deliberately minimal. Must be overridden in any shared/deployed
+  // environment; the fallback is fine for solo local dev only.
+  jwtSecret: process.env.JWT_SECRET ?? 'dev-only-insecure-secret-change-me',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '30d',
+
+  roomPinLength: envInt('ROOM_PIN_LENGTH', 6),
+  roomJoinRateLimitWindowSeconds: envInt('ROOM_JOIN_RATE_LIMIT_WINDOW_SECONDS', 300),
+  roomJoinRateLimitMax: envInt('ROOM_JOIN_RATE_LIMIT_MAX', 10),
+
+  // Clock-tick granularity for enforcing multiplayer time controls.
+  clockTickIntervalMs: envInt('CLOCK_TICK_INTERVAL_MS', 1000),
 };
 
 export type AppConfig = typeof config;
