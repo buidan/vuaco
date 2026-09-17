@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'presentation/screens/pass_and_play_screen.dart';
+import 'presentation/screens/home_screen.dart';
 import 'presentation/theme/app_theme.dart';
 
 void main() {
@@ -16,7 +16,7 @@ class VuacoApp extends StatelessWidget {
     return MaterialApp(
       title: 'Cờ Tướng Master',
       theme: buildAppTheme(),
-      home: const PassAndPlayScreen(),
+      home: const HomeScreen(),
     );
   }
 }

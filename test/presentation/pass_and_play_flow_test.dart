@@ -9,11 +9,17 @@ import 'package:vuaco/presentation/widgets/xiangqi_board_view.dart';
 /// taps (mapped through the same `BoardLayout` the widget itself uses),
 /// standing in for manual interaction since this sandbox has no simulator,
 /// device, or browser available to click through by hand.
+Future<void> _openPassAndPlay(WidgetTester tester) async {
+  await tester.pumpWidget(const ProviderScope(child: VuacoApp()));
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(ElevatedButton, 'Pass & Play'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('tapping a piece then a destination executes a move and records it in history',
       (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: VuacoApp()));
-    await tester.pumpAndSettle();
+    await _openPassAndPlay(tester);
 
     final boardFinder = find.byType(XiangqiBoardView);
     expect(boardFinder, findsOneWidget);
@@ -35,8 +41,7 @@ void main() {
   });
 
   testWidgets('undo reverts a move and restores the turn indicator', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: VuacoApp()));
-    await tester.pumpAndSettle();
+    await _openPassAndPlay(tester);
 
     final boardFinder = find.byType(XiangqiBoardView);
     final boardBox = tester.renderObject(boardFinder) as RenderBox;
