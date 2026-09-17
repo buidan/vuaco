@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../domain/models/side.dart';
 import '../providers/board_editor_providers.dart';
@@ -9,10 +10,18 @@ import '../widgets/board_editor_view.dart';
 import '../widgets/piece_palette.dart';
 import 'pass_and_play_screen.dart';
 
-/// Phase 5's board-import flow: paste a FEN and/or hand-edit the position
-/// with a piece palette, then start a Pass & Play game from it. Camera/
-/// Cloud Vision board scanning is deliberately not part of this pass - see
-/// docs/ARCHITECTURE.md's Phase 5 entry and RULES_ENGINE.md.
+const Map<String, String> _extensionToMimeType = {
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
+  'png': 'image/png',
+  'webp': 'image/webp',
+};
+
+/// Phase 5's board-import flow: paste a FEN, scan a photo (Cloud Vision),
+/// and/or hand-edit the position with a piece palette, then start a Pass &
+/// Play game from it. A scanned photo always lands here for review rather
+/// than starting a game directly - see RULES_ENGINE.md's "Board Setup"
+/// section for why (real testing found read accuracy varies).
 class BoardSetupScreen extends ConsumerStatefulWidget {
   const BoardSetupScreen({super.key});
 
@@ -78,9 +87,35 @@ class _BoardSetupScreenState extends ConsumerState<BoardSetupScreen> {
                 children: [
                   OutlinedButton(onPressed: controller.resetToStandard, child: const Text('Standard position')),
                   OutlinedButton(onPressed: controller.clearBoard, child: const Text('Clear board')),
+                  OutlinedButton(
+                    onPressed: state.scanning ? null : () => _scanPhoto(context),
+                    child: state.scanning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Scan photo'),
+                  ),
                 ],
               ),
             );
+
+            final scanBanner = state.scanError != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(state.scanError!, style: const TextStyle(color: XiangqiColors.crimson)),
+                  )
+                : state.lastScanConfidence != null
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Text(
+                          'Scanned with ${(state.lastScanConfidence! * 100).round()}% confidence - '
+                          'check every piece below before playing.',
+                          style: const TextStyle(color: XiangqiColors.gold),
+                        ),
+                      )
+                    : const SizedBox.shrink();
 
             final sideToggle = Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -125,7 +160,7 @@ class _BoardSetupScreenState extends ConsumerState<BoardSetupScreen> {
               ),
             );
 
-            final content = [fenRow, quickActions, sideToggle];
+            final content = [fenRow, quickActions, scanBanner, sideToggle];
 
             if (isWide) {
               return Column(
@@ -169,5 +204,38 @@ class _BoardSetupScreenState extends ConsumerState<BoardSetupScreen> {
     final state = ref.read(boardEditorControllerProvider);
     ref.read(gameControllerProvider.notifier).startFromPosition(state.board, state.sideToMove);
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PassAndPlayScreen()));
+  }
+
+  Future<void> _scanPhoto(BuildContext context) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 90);
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    final extension = picked.name.split('.').last.toLowerCase();
+    final mimeType = _extensionToMimeType[extension] ?? 'image/jpeg';
+
+    await ref.read(boardEditorControllerProvider.notifier).scanPhoto(bytes, mimeType);
   }
 }
