@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Vuaco uses the camera to scan a photo of a Xiangqi board so it can read the position into the app.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Vuaco uses your photo library to import a photo of a Xiangqi board so it can read the position into the app.</string>
 </dict>
 </plist>
