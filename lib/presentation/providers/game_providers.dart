@@ -29,6 +29,11 @@ class GameControllerState {
   final bool blackInCheck;
   final Move? lastMove;
 
+  /// FEN of the current position - the Engine Coach (Phase 3) sends this
+  /// straight to the backend's `/engine/analyze`, so it must stay in sync
+  /// with [board]/[sideToMove] (see `GameController._stateFromEngine`).
+  final String fen;
+
   const GameControllerState({
     required this.board,
     required this.sideToMove,
@@ -36,6 +41,7 @@ class GameControllerState {
     required this.history,
     required this.redInCheck,
     required this.blackInCheck,
+    required this.fen,
     this.selected,
     this.legalDestinations = const [],
     this.lastMove,
@@ -65,6 +71,7 @@ class GameController extends Notifier<GameControllerState> {
       legalDestinations: legalDestinations,
       redInCheck: _engine.isInCheck(Side.red),
       blackInCheck: _engine.isInCheck(Side.black),
+      fen: _engine.toFen(),
       lastMove: lastMove,
     );
   }
