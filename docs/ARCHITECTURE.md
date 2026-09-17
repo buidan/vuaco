@@ -60,8 +60,11 @@ validation is for UX responsiveness only; never trust the client for match resul
 - Base path: `/api/v1/`
 - Auth: TBD, likely JWT bearer tokens once decided
 - Key endpoints (fill in as built):
-  - `POST /api/v1/engine/analyze` — body: `{ fen: string, multiPv: number }` 
-    → returns top N candidate moves + eval scores
+  - `POST /api/v1/engine/analyze` — body: `{ fen: string, multiPv?: number,
+    depth?: number }` → `{ bestMove, ponder?, depthReached, lines: [{
+    multiPv, depth, scoreType: "cp"|"mate", scoreValue, pvMoves }] }`
+    (implemented; see `backend/README.md`)
+  - `GET /api/v1/health` — Postgres/Redis/engine-pool status (implemented)
   - `POST /api/v1/vision/scan` — body: image → returns `{ fen: string, confidence: number }`
   - `POST /api/v1/rooms` — create private room, returns 6-digit PIN + share link
   - WebSocket events: TBD, document namespace/event names here once Phase 4 starts
@@ -84,7 +87,14 @@ validation is for UX responsiveness only; never trust the client for match resul
 - **Phase 1** — Core rules engine + local Pass & Play (client-only, offline). ✅
   Domain layer + full unit test suite in `lib/domain/`, integration contract
   documented in `RULES_ENGINE.md`. Pass & Play UI in `lib/presentation/`.
-- **Phase 2** — Backend API skeleton + Pikafish microservice + `/engine/analyze`. ⬜
+- **Phase 2** — Backend API skeleton + Pikafish microservice + `/engine/analyze`. ✅
+  Node/TypeScript API in `backend/`, see `backend/README.md`. Pikafish is
+  compiled from unmodified upstream source in its own Docker build stage
+  and invoked only as a separate OS process over UCI (GPL isolation intact
+  - client still never talks to it directly). `/api/v1/engine/analyze` and
+  `/api/v1/health` verified end-to-end against the real engine, both
+  spawned directly and through the full `docker compose` stack (Postgres +
+  Redis + api). Socket.io is wired but has no events yet (Phase 4).
 - **Phase 3** — Engine Coach UI (candidate move overlay, blunder detection). ⬜
 - **Phase 4** — Online multiplayer (rooms, WebSocket sync, auth, matchmaking). ⬜
 - **Phase 5** — FEN import + Cloud Vision board scan + correction UI. ⬜
