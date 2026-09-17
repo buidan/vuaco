@@ -3,19 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/engine_coach_repository.dart';
 import '../../domain/models/engine_analysis.dart';
 import '../../domain/models/side.dart';
+import 'backend_config_providers.dart';
 import 'game_providers.dart';
 
 /// Centipawn-equivalent eval drop (see [EngineAnalysisLine.comparableScore])
 /// at or above which a just-played move is flagged as a blunder.
 const int kBlunderThresholdCentipawns = 200;
 
-/// Points the coach at the Phase 2 backend. No settings UI exists yet to
-/// change this at runtime (out of scope for Phase 3) - override this
-/// provider in tests, or here for a non-default deployment.
-final engineCoachBaseUrlProvider = Provider<String>((ref) => 'http://localhost:3000/api/v1');
-
 final engineCoachRepositoryProvider = Provider<EngineCoachRepository>((ref) {
-  final repository = HttpEngineCoachRepository(baseUrl: ref.watch(engineCoachBaseUrlProvider));
+  final repository = HttpEngineCoachRepository(baseUrl: ref.watch(backendRestBaseUrlProvider));
   ref.onDispose(repository.close);
   return repository;
 });
