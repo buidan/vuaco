@@ -144,7 +144,7 @@ class _CandidateArrowsPainter extends CustomPainter {
   bool shouldRepaint(covariant _CandidateArrowsPainter oldDelegate) => oldDelegate.candidates != candidates;
 }
 
-class _BoardGridPainter extends CustomPainter {
+class BoardGridPainter extends CustomPainter {
   final BoardLayout layout;
   final BoardPoint? selected;
   final List<BoardPoint> legalDestinations;
@@ -154,7 +154,7 @@ class _BoardGridPainter extends CustomPainter {
   final bool redInCheck;
   final bool blackInCheck;
 
-  _BoardGridPainter({
+  BoardGridPainter({
     required this.layout,
     required this.selected,
     required this.legalDestinations,
@@ -282,7 +282,7 @@ class _BoardGridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _BoardGridPainter oldDelegate) {
+  bool shouldRepaint(covariant BoardGridPainter oldDelegate) {
     return oldDelegate.selected != selected ||
         oldDelegate.legalDestinations != legalDestinations ||
         oldDelegate.board != board ||
@@ -363,7 +363,7 @@ class XiangqiBoardView extends StatelessWidget {
           final children = <Widget>[
             Positioned.fill(
               child: CustomPaint(
-                painter: _BoardGridPainter(
+                painter: BoardGridPainter(
                   layout: layout,
                   selected: selected,
                   legalDestinations: legalDestinations,
