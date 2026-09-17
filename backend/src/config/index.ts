@@ -50,6 +50,12 @@ export const config = {
 
   // Clock-tick granularity for enforcing multiplayer time controls.
   clockTickIntervalMs: envInt('CLOCK_TICK_INTERVAL_MS', 1000),
+
+  // Phase 5: Cloud Vision board scan. No default key - /vision/scan stays
+  // a 501 stub (see routes/vision.routes.ts) unless GEMINI_API_KEY is set.
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-flash-latest',
+  visionMaxImageBytes: envInt('VISION_MAX_IMAGE_BYTES', 8 * 1024 * 1024),
 };
 
 export type AppConfig = typeof config;
