@@ -1,9 +1,10 @@
 # RULES_ENGINE.md — Domain Layer Integration Guide
 
 This document describes `lib/domain/`, the pure-Dart Xiangqi rules engine
-built in Phase 1. It has no Flutter dependency and no I/O — read it before
-wiring the AI coach (Phase 3) or multiplayer sync (Phase 4) into it, so those
-phases reuse this layer instead of re-deriving move legality.
+built in Phase 1, plus the Phase 3 Engine Coach models/notation additions
+noted inline below. It has no Flutter dependency and no I/O — read it
+before wiring multiplayer sync (Phase 4) into it, so that phase reuses this
+layer instead of re-deriving move legality.
 
 ## Orientation (read this first)
 
@@ -136,6 +137,12 @@ module rather than changing `Move`/`MoveHistoryEntry` — they don't store
 notation as their source of truth, `XiangqiEngine` computes it at record
 time via `MoveNotation`.
 
+`MoveNotation.parseSquare`/`parseUciMove` are the inverse operation
+(string -> `BoardPoint`s), added in Phase 3 because this notation happens to
+be identical to the UCI coordinate moves Pikafish returns (e.g. "e3e4") -
+the Engine Coach overlay uses these to turn a candidate line's first move
+back into board points to draw.
+
 ## Timer
 
 `ClockConfig`/`ChessClock` (in `models/chess_clock.dart`) are pure data +
@@ -154,4 +161,40 @@ in a repository that resumes a saved/shared game without touching
 `lib/presentation/`. `GameController` (in
 `lib/presentation/providers/game_providers.dart`) owns one `XiangqiEngine`
 instance and re-derives a `GameControllerState` snapshot after every
-mutation; it holds no rules logic of its own.
+mutation; it holds no rules logic of its own. `GameControllerState.fen` is
+`XiangqiEngine.toFen()` recomputed on every snapshot - it exists specifically
+so the Engine Coach can send the current position to the backend without
+reaching into the engine directly.
+
+## Engine Coach (Phase 3)
+
+`lib/domain/models/engine_analysis.dart` (`EngineAnalysisResult`/
+`EngineAnalysisLine`) mirrors the backend's `AnalysisResult`/`AnalysisLine`
+(`backend/src/engine/types.ts`) - plain data only, no JSON knowledge; decoding
+the `POST /api/v1/engine/analyze` response into these lives in
+`lib/data/repositories/engine_coach_repository.dart`
+(`HttpEngineCoachRepository`), keeping the domain model serialization-agnostic
+the same way `Board`/`Move` are.
+
+`EngineCoachController` (`lib/presentation/providers/engine_coach_providers.dart`)
+watches `gameControllerProvider` and, while enabled, calls `analyze()` after
+every position change (`ref.listen` inside `build()`, comparing `Board`
+instances by reference - every real move/undo/redo/new-game produces a new
+`Board`, so reference inequality is a cheap, correct "position changed"
+check). Blunder detection reuses this same continuous loop rather than
+making extra API calls: each analysis is both the "after" eval for the move
+that was just made *and* the "before" eval (baseline) for whichever move
+comes next, so `_detectBlunder` just diffs consecutive results (negating one
+side's centipawn score to the other's perspective - see
+`EngineAnalysisLine.comparableScore` for how mate scores are folded onto the
+same scale for this comparison only; display code should still special-case
+`EngineScoreType.mate` for "Mate in N" text). This only fires immediately
+after a real move (history length exactly +1 from the last recorded
+baseline) - it does not try to handle undo/redo interleavings precisely.
+
+The board overlay (`XiangqiBoardView`'s `candidateMoves` param, drawn by
+`_CandidateArrowsPainter`) turns each line's first PV move (a UCI string like
+"e3e4") into board points via `MoveNotation.parseUciMove`. The screen only
+passes candidates through when `EngineCoachState.analyzedSide` matches the
+current side to move, so a stale arrow for the position-before-last-move
+never flashes up while a fresh analysis is in flight.

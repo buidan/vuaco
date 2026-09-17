@@ -95,7 +95,14 @@ validation is for UX responsiveness only; never trust the client for match resul
   `/api/v1/health` verified end-to-end against the real engine, both
   spawned directly and through the full `docker compose` stack (Postgres +
   Redis + api). Socket.io is wired but has no events yet (Phase 4).
-- **Phase 3** — Engine Coach UI (candidate move overlay, blunder detection). ⬜
+- **Phase 3** — Engine Coach UI (candidate move overlay, blunder detection). ✅
+  Flutter client calls the Phase 2 backend's `/api/v1/engine/analyze`
+  (`EngineCoachController` in `lib/presentation/providers/`) whenever the
+  position changes; candidate lines render as ranked arrows on the board,
+  and blunders are flagged by diffing consecutive analyses (no extra API
+  calls) against `kBlunderThresholdCentipawns`. No settings UI yet for the
+  backend base URL (hardcoded `http://localhost:3000/api/v1`) - add one
+  before this leaves local dev. See RULES_ENGINE.md's "Engine Coach" section.
 - **Phase 4** — Online multiplayer (rooms, WebSocket sync, auth, matchmaking). ⬜
 - **Phase 5** — FEN import + Cloud Vision board scan + correction UI. ⬜
 - **Phase 6** (later, separate effort) — Local on-device vision model. ⬜
