@@ -13,6 +13,7 @@ import { createAuthRouter } from './routes/auth.routes';
 import { createEngineRouter } from './routes/engine.routes';
 import { createHealthRouter } from './routes/health.routes';
 import { createRoomsRouter } from './routes/rooms.routes';
+import { createVisionRouter } from './routes/vision.routes';
 
 export interface AppDependencies {
   db: Pool;
@@ -38,6 +39,7 @@ export function createApp(deps: AppDependencies): Express {
   app.use('/api/v1', createEngineRouter(deps.pool));
   app.use('/api/v1', createAuthRouter(deps.db));
   app.use('/api/v1', createRoomsRouter(deps.roomManager, deps.redis));
+  app.use('/api/v1', createVisionRouter());
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'not_found' });
