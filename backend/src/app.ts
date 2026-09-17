@@ -14,12 +14,14 @@ import { createEngineRouter } from './routes/engine.routes';
 import { createHealthRouter } from './routes/health.routes';
 import { createRoomsRouter } from './routes/rooms.routes';
 import { createVisionRouter } from './routes/vision.routes';
+import { VisionProvider } from './vision/visionProvider';
 
 export interface AppDependencies {
   db: Pool;
   redis: Redis;
   pool: PikafishPool;
   roomManager: RoomManager;
+  visionProvider: VisionProvider | null;
 }
 
 export function createApp(deps: AppDependencies): Express {
@@ -39,7 +41,7 @@ export function createApp(deps: AppDependencies): Express {
   app.use('/api/v1', createEngineRouter(deps.pool));
   app.use('/api/v1', createAuthRouter(deps.db));
   app.use('/api/v1', createRoomsRouter(deps.roomManager, deps.redis));
-  app.use('/api/v1', createVisionRouter());
+  app.use('/api/v1', createVisionRouter(deps.visionProvider));
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'not_found' });

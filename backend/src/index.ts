@@ -6,6 +6,8 @@ import { config } from './config';
 import { createDbPool } from './db/pool';
 import { PikafishPool } from './engine/pikafishPool';
 import { RoomManager } from './rooms/roomManager';
+import { GeminiVisionProvider } from './vision/geminiVisionProvider';
+import { VisionProvider } from './vision/visionProvider';
 import { attachSocketServer } from './websocket/socket';
 
 async function main(): Promise<void> {
@@ -27,7 +29,12 @@ async function main(): Promise<void> {
   const roomManager = new RoomManager(db, config.clockTickIntervalMs);
   roomManager.startClockLoop();
 
-  const app = createApp({ db, redis, pool, roomManager });
+  const visionProvider: VisionProvider | null = config.geminiApiKey
+    ? new GeminiVisionProvider(config.geminiApiKey, config.geminiModel)
+    : null;
+  console.log(visionProvider ? `Cloud Vision enabled (${config.geminiModel})` : 'Cloud Vision not configured (GEMINI_API_KEY unset) - /vision/scan will 501');
+
+  const app = createApp({ db, redis, pool, roomManager, visionProvider });
   const httpServer = createServer(app);
   attachSocketServer(httpServer, config.corsOrigin, roomManager);
 
