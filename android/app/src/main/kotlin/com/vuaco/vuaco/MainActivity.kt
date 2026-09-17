@@ -1,0 +1,5 @@
+package com.vuaco.vuaco
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
