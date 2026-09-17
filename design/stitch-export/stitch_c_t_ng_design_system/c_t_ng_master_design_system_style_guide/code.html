@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cờ Tướng Master — Style Guide &amp; Design System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Serif+SC:wght@500;700;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mahogany: '#2C1810',
+            walnut: '#4A2E1B',
+            parchment: '#F4E8C1',
+            'parchment-light': '#FAF3DF',
+            crimson: '#A8342A',
+            gold: '#C9A24B',
+            'gold-light': '#E5C478',
+            jade: '#2E5A44',
+            'jade-dark': '#1C3B2C',
+            ink: '#1D130E',
+          },
+          fontFamily: {
+            serifDisplay: ['"Cinzel"', '"Playfair Display"', 'serif'],
+            calligraphy: ['"Noto Serif SC"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Subtle wooden rice-paper texture simulation */
+    body {
+      background-color: #2C1810;
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(74, 46, 27, 0.45) 0%, transparent 75%),
+        radial-gradient(circle at 100% 100%, rgba(46, 90, 68, 0.15) 0%, transparent 50%);
+      color: #F4E8C1;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .wood-card {
+      background: linear-gradient(145deg, rgba(74, 46, 27, 0.6) 0%, rgba(44, 24, 16, 0.85) 100%);
+      border: 1px solid rgba(201, 162, 75, 0.28);
+      box-shadow: inset 0 1px 0 rgba(229, 196, 120, 0.15), 0 8px 24px -6px rgba(15, 8, 5, 0.6);
+    }
+
+    .parchment-card {
+      background: #F4E8C1;
+      background-image: radial-gradient(#E8D9AB 1px, transparent 1px);
+      background-size: 16px 16px;
+      color: #2C1810;
+      border: 1px solid rgba(201, 162, 75, 0.6);
+      box-shadow: 
+        0 2px 4px rgba(0,0,0,0.15),
+        0 8px 18px rgba(28, 15, 10, 0.4),
+        inset 0 0 0 1px rgba(255,255,255,0.4);
+    }
+
+    .hairline-gold {
+      border-color: rgba(201, 162, 75, 0.35);
+    }
+
+    .piece-shadow {
+      box-shadow: 
+        0 1px 1px rgba(0,0,0,0.25),
+        0 4px 8px rgba(20, 10, 6, 0.4),
+        0 10px 20px -3px rgba(10, 5, 3, 0.6),
+        inset 0 2px 3px rgba(255,255,255,0.8),
+        inset 0 -3px 5px rgba(140, 110, 75, 0.45);
+    }
+
+    .piece-bevel {
+      border: 2.5px solid #D6C293;
+    }
+
+    /* Board intersection markings */
+    .crosshair-corner {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-color: #C9A24B;
+    }
+  </style>
+</head>
+<body class="min-h-full pb-14 selection:bg-crimson selection:text-parchment">
+
+  <!-- Main Container -->
+  <main class="max-w-[420px] mx-auto px-4 pt-6">
+
+    <!-- Header / Title Sheet Banner -->
+    <header class="text-center mb-7 relative">
+      <div class="inline-flex items-center justify-center gap-2 mb-2 px-3 py-1 rounded-full bg-walnut/70 border border-gold/40 text-[10px] tracking-[0.2em] uppercase font-mono text-gold-light">
+        <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+        Style Guide &amp; Design System
+        <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+      </div>
+
+      <div class="relative py-1">
+        <h1 class="font-serifDisplay text-3xl font-black tracking-tight text-parchment drop-shadow-sm">
+          CỜ TƯỚNG MASTER
+        </h1>
+        <p class="font-calligraphy text-xs tracking-widest text-gold-light/90 mt-0.5">
+          象棋大师 · TACTILE ASIAN HERITAGE
+        </p>
+      </div>
+
+      <p class="text-[11px] text-parchment/70 max-w-[340px] mx-auto mt-2 leading-relaxed italic">
+        "Antique carved boxwood &amp; aged rice paper, reimagined as an authentic, tactile quiet luxury mobile interface."
+      </p>
+
+      <!-- Decorative Divider with Coin / Seal Emblem -->
+      <div class="flex items-center justify-center gap-3 mt-4 opacity-75">
+        <div class="h-px w-20 bg-gradient-to-r from-transparent via-gold to-gold/20"></div>
+        <div class="w-4 h-4 rounded-full border border-gold flex items-center justify-center text-[8px] font-calligraphy text-gold">
+          象
+        </div>
+        <div class="h-px w-20 bg-gradient-to-l from-transparent via-gold to-gold/20"></div>
+      </div>
+    </header>
+
+    <!-- SECTION 1: COLOR PALETTE -->
+    <section class="wood-card rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-3 border-b border-gold/20 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gold">01</span>
+          <h2 class="text-sm font-serifDisplay tracking-wider uppercase text-parchment font-bold">Color Palette</h2>
+        </div>
+        <span class="text-[10px] font-mono text-parchment/50">8 SWATCHES</span>
+      </div>
+
+      <!-- Grid of Swatches -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- 1: Deep Mahogany -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#2C1810] border border-gold/40 shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Deep Mahogany</p>
+            <p class="text-[9px] font-mono text-gold-light">#2C1810</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">Primary Background</p>
+          </div>
+        </div>
+
+        <!-- 2: Warm Walnut -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#4A2E1B] border border-gold/40 shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Warm Walnut</p>
+            <p class="text-[9px] font-mono text-gold-light">#4A2E1B</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">Secondary Background</p>
+          </div>
+        </div>
+
+        <!-- 3: Aged Parchment -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#F4E8C1] border border-walnut shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Aged Parchment</p>
+            <p class="text-[9px] font-mono text-gold-light">#F4E8C1</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">Surface / Card Fill</p>
+          </div>
+        </div>
+
+        <!-- 4: Traditional Crimson -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#A8342A] border border-gold/50 shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Traditional Crimson</p>
+            <p class="text-[9px] font-mono text-gold-light">#A8342A</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">CTA &amp; Red Pieces</p>
+          </div>
+        </div>
+
+        <!-- 5: Imperial Gold -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#C9A24B] border border-gold-light/60 shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Imperial Gold</p>
+            <p class="text-[9px] font-mono text-gold-light">#C9A24B</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">Badges &amp; Highlights</p>
+          </div>
+        </div>
+
+        <!-- 6: Jade Green -->
+        <div class="bg-mahogany/80 p-2.5 rounded-xl border border-gold/25 flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-[#2E5A44] border border-gold/40 shadow-inner flex-shrink-0"></div>
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold text-parchment truncate">Jade Green</p>
+            <p class="text-[9px] font-mono text-gold-light">#2E5A44</p>
+            <p class="text-[8.5px] text-parchment/60 leading-tight">Black Pieces &amp; Secondary</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contrast Text Tokens Pair -->
+      <div class="mt-2.5 grid grid-cols-2 gap-2 pt-2 border-t border-gold/15">
+        <div class="bg-[#2C1810] p-2 rounded-lg border border-gold/20 flex items-center justify-between">
+          <span class="text-[10px] text-[#F4E8C1] font-medium">Cream Text (#F4E8C1)</span>
+          <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-parchment">On Dark</span>
+        </div>
+        <div class="bg-[#F4E8C1] p-2 rounded-lg border border-gold/40 flex items-center justify-between">
+          <span class="text-[10px] text-[#2C1810] font-medium">Dark Walnut (#2C1810)</span>
+          <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-black/10 text-walnut">On Parchment</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: TYPOGRAPHY -->
+    <section class="wood-card rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-3 border-b border-gold/20 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gold">02</span>
+          <h2 class="text-sm font-serifDisplay tracking-wider uppercase text-parchment font-bold">Typography System</h2>
+        </div>
+        <span class="text-[10px] font-mono text-gold-light">EASTERN SERIF &amp; SANS</span>
+      </div>
+
+      <!-- Type Scale Stack -->
+      <div class="space-y-3.5 bg-black/20 p-3 rounded-xl border border-gold/15">
+        
+        <!-- Display / H1 -->
+        <div class="border-b border-white/5 pb-2.5">
+          <div class="flex items-baseline justify-between mb-1">
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest">Display / H1 · Cinzel Bold (28px)</span>
+            <span class="text-[8.5px] font-mono text-parchment/40">Headlines &amp; Victories</span>
+          </div>
+          <p class="font-serifDisplay text-2xl font-bold text-parchment tracking-tight">
+            Cờ Tướng Master
+          </p>
+          <p class="font-calligraphy text-sm text-gold-light/80 mt-0.5">
+            Xích Bích Phá Trận · 楚河汉界
+          </p>
+        </div>
+
+        <!-- H2 Subheading -->
+        <div class="border-b border-white/5 pb-2">
+          <div class="flex items-baseline justify-between mb-1">
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest">Subheading / H2 · Serif Medium (17px)</span>
+            <span class="text-[8.5px] font-mono text-parchment/40">Section Titles</span>
+          </div>
+          <p class="font-serifDisplay text-base font-semibold text-parchment">
+            Kỳ Phổ Cổ Điển &amp; Thế Trận Khai Cuộc
+          </p>
+        </div>
+
+        <!-- Body Text -->
+        <div class="border-b border-white/5 pb-2">
+          <div class="flex items-baseline justify-between mb-1">
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest">Body · Plus Jakarta Sans (13px / 400)</span>
+            <span class="text-[8.5px] font-mono text-parchment/40">Rules &amp; Analysis</span>
+          </div>
+          <p class="text-xs text-parchment/85 leading-relaxed font-sans">
+            Xe đi thẳng, Mã đi chéo, Pháo cách một quân mới được ăn. Luyện tập tàn cuộc giúp tăng khả năng tính toán chuẩn xác.
+          </p>
+        </div>
+
+        <!-- Numbers / Monospace / Stats -->
+        <div>
+          <div class="flex items-baseline justify-between mb-1">
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest">Numeric &amp; Stats · JetBrains Mono (12px / Tabular)</span>
+            <span class="text-[8.5px] font-mono text-parchment/40">Timers, Elo, Scores</span>
+          </div>
+          <div class="flex items-center gap-3 font-mono text-xs text-parchment bg-walnut/70 px-2.5 py-1.5 rounded-lg border border-gold/25">
+            <div><span class="text-[9px] text-gold-light block">ELO RATING</span> <strong class="text-gold">1,845</strong></div>
+            <div class="h-5 w-px bg-gold/20"></div>
+            <div><span class="text-[9px] text-gold-light block">TURN TIMER</span> <strong class="text-parchment">04:58.2</strong></div>
+            <div class="h-5 w-px bg-gold/20"></div>
+            <div><span class="text-[9px] text-gold-light block">ACCURACY</span> <strong class="text-jade-light text-emerald-400">94.2%</strong></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: UI COMPONENTS -->
+    <section class="wood-card rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-3 border-b border-gold/20 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gold">03</span>
+          <h2 class="text-sm font-serifDisplay tracking-wider uppercase text-parchment font-bold">UI Components</h2>
+        </div>
+        <span class="text-[10px] font-mono text-gold-light">TACTILE CRAFT</span>
+      </div>
+
+      <div class="space-y-4">
+        
+        <!-- Buttons row -->
+        <div>
+          <span class="text-[9px] font-mono uppercase text-gold tracking-widest block mb-1.5">Action Buttons</span>
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Primary Button -->
+            <button class="w-full py-2.5 px-3 rounded-full bg-gradient-to-r from-crimson via-[#B83E34] to-[#C9A24B] text-parchment font-serifDisplay text-xs font-bold tracking-wide shadow-[0_4px_14px_rgba(168,52,42,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-gold-light/40 flex items-center justify-center gap-1.5 transition active:scale-[0.98]">
+              <span>Vào Bàn Chơi</span>
+              <svg class="w-3.5 h-3.5 text-parchment" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+
+            <!-- Secondary Button -->
+            <button class="w-full py-2.5 px-3 rounded-full bg-parchment text-jade font-sans text-xs font-semibold tracking-wide border-2 border-jade shadow-[0_2px_8px_rgba(0,0,0,0.25)] flex items-center justify-center gap-1.5 hover:bg-parchment-light transition active:scale-[0.98]">
+              <span>Xem Thế Cờ</span>
+              <svg class="w-3.5 h-3.5 text-jade" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="flex justify-between text-[8px] font-mono text-parchment/50 mt-1 px-1">
+            <span>Primary: Crimson-to-Gold Pill</span>
+            <span>Secondary: Parchment &amp; Jade</span>
+          </div>
+        </div>
+
+        <!-- Parchment Card Component -->
+        <div>
+          <span class="text-[9px] font-mono uppercase text-gold tracking-widest block mb-1.5">Surface Card Treatment</span>
+          <div class="parchment-card rounded-xl p-3.5 relative overflow-hidden">
+            <!-- Decorative carved corner brackets -->
+            <div class="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-gold/70"></div>
+            <div class="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-gold/70"></div>
+            <div class="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-gold/70"></div>
+            <div class="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-gold/70"></div>
+
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="inline-block text-[9px] font-mono font-bold uppercase tracking-wider text-crimson mb-0.5">Khảo Sát Khai Cuộc</span>
+                <h4 class="font-serifDisplay font-bold text-sm text-walnut">Trận Pháo Đầu Đối Bình Phong Mã</h4>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-[#C9A24B] text-mahogany font-mono text-[9px] font-bold shadow-sm">
+                MASTER
+              </span>
+            </div>
+            <p class="text-[11px] text-walnut/80 mt-1.5 font-sans leading-normal">
+              Thế trận cân bằng kinh điển nhất trong lịch sử cờ tướng phương Đông, biến hóa vô cùng sâu sắc.
+            </p>
+          </div>
+        </div>
+
+        <!-- Input Field & Badges/Icons -->
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <!-- Input Field -->
+          <div>
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest block mb-1">Input Field</span>
+            <div class="bg-parchment rounded-lg px-2.5 py-2 border-b-2 border-jade shadow-sm flex items-center justify-between">
+              <span class="text-xs text-walnut/90 font-medium font-sans">Kỳ thủ số 1...</span>
+              <svg class="w-3.5 h-3.5 text-jade" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <span class="text-[8px] font-mono text-parchment/50 mt-1 block">Parchment with Jade underline</span>
+          </div>
+
+          <!-- Badges & Pills -->
+          <div>
+            <span class="text-[9px] font-mono uppercase text-gold tracking-widest block mb-1">Badges &amp; Status</span>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="px-2.5 py-1 rounded-full bg-gold text-mahogany font-mono text-[10px] font-bold shadow-sm inline-flex items-center gap-1">
+                <span>★</span> Elo 1845
+              </span>
+              <span class="px-2 py-1 rounded-full bg-jade text-parchment font-mono text-[10px] font-medium border border-gold/30">
+                ● 10:00
+              </span>
+            </div>
+            <span class="text-[8px] font-mono text-parchment/50 mt-1 block">Gold Elo &amp; Jade Timer</span>
+          </div>
+        </div>
+
+        <!-- Icon Style Samples -->
+        <div class="bg-black/25 p-2.5 rounded-xl border border-gold/15 flex items-center justify-between">
+          <div class="text-[9px] font-mono text-parchment/70">
+            <span class="text-gold block font-semibold">ICON SYSTEM</span>
+            Rounded line terminals, Gold &amp; Jade
+          </div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-walnut border border-gold/40 flex items-center justify-center text-gold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-walnut border border-jade flex items-center justify-center text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-walnut border border-gold/40 flex items-center justify-center text-gold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-walnut border border-jade flex items-center justify-center text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 4: XIANGQI PIECE STYLE -->
+    <section class="wood-card rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-3 border-b border-gold/20 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gold">04</span>
+          <h2 class="text-sm font-serifDisplay tracking-wider uppercase text-parchment font-bold">Xiangqi Piece Craft</h2>
+        </div>
+        <span class="text-[10px] font-mono text-gold-light">BONE &amp; INK CARVING</span>
+      </div>
+
+      <p class="text-[11px] text-parchment/75 mb-3 leading-relaxed">
+        Carved round discs modeled after polished boxwood and aged ox-bone, with deep-engraved calligraphic characters and tactile drop shadows.
+      </p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <!-- RED PIECE: General (Tướng / 帥) -->
+        <div class="bg-black/30 rounded-xl p-3 border border-crimson/30 text-center flex flex-col items-center">
+          <div class="relative mb-2">
+            <!-- 3D Piece Disc -->
+            <div class="w-16 h-16 rounded-full bg-gradient-to-b from-[#FAF3DF] via-[#F4E8C1] to-[#D9C496] piece-shadow piece-bevel flex items-center justify-center relative">
+              <!-- Inner engraved ring -->
+              <div class="w-[52px] h-[52px] rounded-full border border-crimson/30 flex items-center justify-center bg-[#F7EED3]/60 shadow-inner">
+                <!-- Carved Crimson Character -->
+                <span class="font-calligraphy text-2xl font-black text-[#A8342A] drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+                  帥
+                </span>
+              </div>
+            </div>
+          </div>
+          <span class="text-xs font-serifDisplay font-bold text-parchment">TƯỚNG (Red General)</span>
+          <span class="text-[9px] font-mono text-crimson font-semibold">帥 · Crimson Engraved</span>
+          <span class="text-[8.5px] text-parchment/50 mt-0.5">Polished Boxwood Bone</span>
+        </div>
+
+        <!-- BLACK PIECE: General (Tướng / 將) -->
+        <div class="bg-black/30 rounded-xl p-3 border border-jade/40 text-center flex flex-col items-center">
+          <div class="relative mb-2">
+            <!-- 3D Piece Disc -->
+            <div class="w-16 h-16 rounded-full bg-gradient-to-b from-[#FAF3DF] via-[#F4E8C1] to-[#D9C496] piece-shadow piece-bevel flex items-center justify-center relative">
+              <!-- Inner engraved ring -->
+              <div class="w-[52px] h-[52px] rounded-full border border-ink/30 flex items-center justify-center bg-[#F7EED3]/60 shadow-inner">
+                <!-- Carved Black Ink Character -->
+                <span class="font-calligraphy text-2xl font-black text-[#1D130E] drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+                  將
+                </span>
+              </div>
+            </div>
+          </div>
+          <span class="text-xs font-serifDisplay font-bold text-parchment">TƯỚNG (Black General)</span>
+          <span class="text-[9px] font-mono text-gold-light font-semibold">將 · Traditional Black Ink</span>
+          <span class="text-[8.5px] text-parchment/50 mt-0.5">Deep Incised Calligraphy</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: BOARD STYLE SWATCH -->
+    <section class="wood-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3 border-b border-gold/20 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-gold">05</span>
+          <h2 class="text-sm font-serifDisplay tracking-wider uppercase text-parchment font-bold">Board Style Swatch</h2>
+        </div>
+        <span class="text-[10px] font-mono text-gold-light">INTERSECTION GRID</span>
+      </div>
+
+      <p class="text-[11px] text-parchment/75 mb-3 leading-relaxed">
+        Parchment-toned bamboo wood surface with thin gold gridlines. Pieces sit directly on <strong>line intersection points</strong>, accented by classic Asian corner brackets (khí điểm).
+      </p>
+
+      <!-- Board Sample Representation -->
+      <div class="parchment-card rounded-xl p-4 relative overflow-hidden shadow-lg border border-gold/60">
+        
+        <!-- Subtle Wood Grain Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#EADBB0]/30 to-[#DFCB98]/40 pointer-events-none"></div>
+
+        <!-- Board Grid Area Simulation -->
+        <div class="relative h-44 w-full bg-[#F5EACB] rounded-lg border-2 border-gold/70 overflow-hidden flex items-center justify-center">
+          
+          <!-- Grid Vertical Lines -->
+          <div class="absolute inset-0 flex justify-around pointer-events-none">
+            <div class="w-px h-full bg-[#C9A24B]/70 shadow-[0_0_1px_rgba(255,255,255,0.4)]"></div>
+            <div class="w-px h-full bg-[#C9A24B]/90 shadow-[0_0_1px_rgba(255,255,255,0.4)]"></div>
+            <div class="w-px h-full bg-[#C9A24B]/70 shadow-[0_0_1px_rgba(255,255,255,0.4)]"></div>
+          </div>
+
+          <!-- Grid Horizontal Lines -->
+          <div class="absolute inset-0 flex flex-col justify-around pointer-events-none">
+            <div class="h-px w-full bg-[#C9A24B]/70"></div>
+            <div class="h-px w-full bg-[#C9A24B]/90"></div>
+            <div class="h-px w-full bg-[#C9A24B]/70"></div>
+          </div>
+
+          <!-- Palace Diagonal Guidelines Sample -->
+          <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" xmlns="http://www.w3.org/2000/svg">
+            <line x1="20%" y1="15%" x2="80%" y2="85%" stroke="#C9A24B" stroke-width="1.2" stroke-dasharray="3,3" />
+            <line x1="80%" y1="15%" x2="20%" y2="85%" stroke="#C9A24B" stroke-width="1.2" stroke-dasharray="3,3" />
+          </svg>
+
+          <!-- Central Intersection with Traditional Crosshair Marks -->
+          <div class="absolute z-10 flex items-center justify-center">
+            
+            <!-- Traditional Xiangqi Corner Brackets around intersection -->
+            <div class="absolute -top-3.5 -left-3.5 w-2 h-2 border-t border-l border-gold"></div>
+            <div class="absolute -top-3.5 -right-3.5 w-2 h-2 border-t border-r border-gold"></div>
+            <div class="absolute -bottom-3.5 -left-3.5 w-2 h-2 border-b border-l border-gold"></div>
+            <div class="absolute -bottom-3.5 -right-3.5 w-2 h-2 border-b border-r border-gold"></div>
+
+            <!-- Red Cannon Piece Resting Precisely on the Intersection -->
+            <div class="w-13 h-13 w-12 h-12 rounded-full bg-gradient-to-b from-[#FAF3DF] via-[#F4E8C1] to-[#D9C496] piece-shadow border-2 border-[#D6C293] flex items-center justify-center relative cursor-pointer transform hover:scale-105 transition">
+              <div class="w-9 h-9 rounded-full border border-crimson/30 flex items-center justify-center bg-[#F7EED3]/70">
+                <span class="font-calligraphy text-lg font-black text-[#A8342A]">
+                  炮
+                </span>
+              </div>
+            </div>
+
+            <!-- Callout Tooltip -->
+            <div class="absolute -bottom-8 bg-mahogany/95 text-parchment text-[9px] font-mono px-2 py-0.5 rounded-full border border-gold/40 shadow-md whitespace-nowrap">
+              Intersection Point (Điểm Giao)
+            </div>
+          </div>
+
+          <!-- Decorative River Header Indicator in background -->
+          <div class="absolute top-1 text-[9px] font-calligraphy text-gold/60 tracking-[0.3em] select-none">
+            楚 河 · SỞ HÀ
+          </div>
+        </div>
+
+        <!-- Board Style Specs Footer -->
+        <div class="mt-2.5 grid grid-cols-2 gap-2 text-[9.5px] text-walnut/90 font-medium">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-gold"></span>
+            <span>Line: 1px Imperial Gold</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-parchment border border-walnut"></span>
+            <span>Surface: Warm Aged Silk</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Footer Seal / Design System Metadata -->
+    <footer class="mt-7 text-center border-t border-gold/20 pt-4 pb-2">
+      <div class="inline-flex items-center gap-2 text-[10px] font-mono text-gold-light/70 tracking-widest uppercase">
+        <span>Stitch UI Spec</span>
+        <span>•</span>
+        <span>v1.0 Master Draft</span>
+        <span>•</span>
+        <span>Mobile 390px</span>
+      </div>
+      <p class="text-[9px] text-parchment/40 mt-1 font-sans">
+        Cờ Tướng Master Design Token &amp; Tactile Component Library
+      </p>
+    </footer>
+
+  </main>
+
+</body>
+</html>
