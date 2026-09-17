@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vuaco
+      POSTGRES_PASSWORD: vuaco
+      POSTGRES_DB: vuaco
+    ports:
+      - '5433:5432' # host port shifted to avoid clashing with other local Postgres instances
+    volumes:
+      - vuaco_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vuaco']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgres://vuaco:vuaco@postgres:5432/vuaco
+      REDIS_URL: redis://redis:6379
+      PIKAFISH_POOL_SIZE: 2
+      LOG_PRETTY: 'false'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  vuaco_postgres_data:
