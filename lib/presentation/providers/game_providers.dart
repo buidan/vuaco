@@ -116,6 +116,14 @@ class GameController extends Notifier<GameControllerState> {
     _engine = ref.read(passAndPlayRepositoryProvider).createNewGame();
     state = _stateFromEngine();
   }
+
+  /// Starts a fresh Pass & Play game from [board]/[sideToMove] instead of
+  /// the standard starting position - used by the Phase 5 board-setup flow
+  /// (manual FEN paste or hand-edited position).
+  void startFromPosition(Board board, Side sideToMove) {
+    _engine = ref.read(passAndPlayRepositoryProvider).createNewGame(board: board, sideToMove: sideToMove);
+    state = _stateFromEngine();
+  }
 }
 
 final gameControllerProvider = NotifierProvider<GameController, GameControllerState>(GameController.new);
