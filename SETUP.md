@@ -17,7 +17,7 @@ offline - no backend needed. Everything else needs the backend running:
 | Set Up Position (FEN paste / board editor) | No |
 | Engine Coach (candidate moves, blunder detection) | Yes |
 | Play Online (multiplayer rooms) | Yes |
-| Photo → FEN board scan | Not implemented yet (any phase) - see ARCHITECTURE.md Phase 5 |
+| Photo → FEN board scan | Yes, and the backend also needs `GEMINI_API_KEY` set - see step 2 |
 
 If you only want to poke at Pass & Play or the board editor, skip straight
 to "Flutter app" below and you can ignore the backend section entirely.

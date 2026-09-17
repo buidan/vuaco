@@ -32,7 +32,7 @@ The Pikafish chess engine is GPL-3.0 licensed. To keep the app proprietary:
 | AI Engine Service | Isolated Pikafish wrapper (UCI) | Internal-only, never exposed to client directly |
 | Database | Postgres | Users, matches, rooms, Elo history |
 | Cache / Room State | Redis | Active room state, matchmaking, rate limiting |
-| Vision (v1) | Cloud Vision API (GPT-4o / Gemini) | Photo → FEN |
+| Vision (v1) | Google Gemini (`gemini-flash-latest`) | Photo → FEN, implemented Phase 5; see backend/README.md |
 | Vision (v2, later) | Local ONNX/TFLite model | Only after v1 proves demand; separate effort with its own data pipeline |
 | Auth | Guest JWT (Phase 4) | No password/refresh flow yet - every login creates a fresh guest user; see backend/README.md |
 
@@ -70,11 +70,13 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
     multiPv, depth, scoreType: "cp"|"mate", scoreValue, pvMoves }] }`
     (implemented; see `backend/README.md`)
   - `GET /api/v1/health` — Postgres/Redis/engine-pool status (implemented)
-  - `POST /api/v1/vision/scan` — body: image → returns `{ fen: string,
-    confidence: number }`. **Stub only** (responds `501 not_implemented`) -
-    Phase 5 shipped manual FEN paste + the board-correction UI instead; see
-    the TODO in `backend/src/routes/vision.routes.ts` for the planned
-    `VisionProvider` shape once a Cloud Vision provider/API key is chosen.
+  - `POST /api/v1/vision/scan` — auth required, body: raw image bytes
+    (`Content-Type: image/jpeg|png|webp`, not multipart) → `{ fen: string,
+    confidence: number }`. Implemented against Google Gemini
+    (`GeminiVisionProvider`, behind a `VisionProvider` interface so the
+    provider is swappable); responds `501 not_implemented` if
+    `GEMINI_API_KEY` isn't configured, so the contract is stable either
+    way. See `backend/README.md`'s "Cloud Vision board scan" section.
   - `POST /api/v1/auth/guest` — body: `{ username: string }` → `{ token,
     user: { id, username, elo } }` (implemented; always creates a fresh
     guest user, see backend/README.md)
@@ -145,16 +147,21 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
   friend invite (out of scope for this pass, see RULES_ENGINE.md). No deep
   link handling for the room share link yet (placeholder `vuaco://` scheme).
   See RULES_ENGINE.md's "Online Multiplayer" section and backend/README.md.
-- **Phase 5** — FEN import + Cloud Vision board scan + correction UI. 🚧
-  Manual FEN paste and the interactive board-correction UI are done
-  (`BoardSetupScreen`/`BoardEditorController` in `lib/presentation/`, a new
-  `PositionValidator` domain check that both generals exist before a
-  position can be played). Cloud Vision photo scan is deliberately
-  deferred - no provider/API key decision made yet - so `POST
-  /api/v1/vision/scan` is a `501` stub and there's no camera-capture UI.
-  See RULES_ENGINE.md's "Board Setup" section and the TODO in
-  `backend/src/routes/vision.routes.ts` for what's planned when that
-  decision is made.
+- **Phase 5** — FEN import + Cloud Vision board scan + correction UI. ✅
+  Manual FEN paste, photo scan, and the interactive board-correction UI are
+  all done (`BoardSetupScreen`/`BoardEditorController` in
+  `lib/presentation/`, a `PositionValidator` domain check that both
+  generals exist before a position can be played). Cloud Vision is Google
+  Gemini (`backend/src/vision/geminiVisionProvider.ts`, chosen because a
+  `GEMINI_API_KEY` was available to actually test against - see
+  RULES_ENGINE.md's "Board Setup" section for the real end-to-end
+  verification and its results). A scanned photo always lands in the board
+  editor for review rather than starting a game directly - real testing
+  found read accuracy is excellent on a clean/standard-looking position but
+  degrades on a sparse or unusual one, so treating the result as a draft
+  isn't just defensive, it's necessary. Camera/gallery capture uses
+  `image_picker`; the endpoint gracefully 501s if no `GEMINI_API_KEY` is
+  configured.
 - **Phase 6** (later, separate effort) — Local on-device vision model. ⬜
 
 Update the checkboxes/status as phases complete. Each phase's implementation 

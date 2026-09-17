@@ -79,11 +79,10 @@ location (`/opt/pikafish/pikafish`), which doesn't exist on the host. Either:
 - `POST /api/v1/rooms/join` (auth required, Redis-rate-limited) - body
   `{ pin }` -> `{ state }`.
 - `GET /api/v1/rooms/:id` (auth required) -> `{ state }`.
-- `POST /api/v1/vision/scan` - **stub only**, always responds `501
-  not_implemented`. See the TODO comment in `src/routes/vision.routes.ts`
-  for the planned Cloud Vision (photo -> FEN) integration once a provider
-  and API key are chosen; Phase 5 shipped manual FEN paste and the board-
-  correction UI instead (Flutter side).
+- `POST /api/v1/vision/scan` (auth required) - body: raw image bytes
+  (`Content-Type: image/jpeg`, `image/png`, or `image/webp` - not
+  multipart) -> `{ fen, confidence }`. Responds `501 not_implemented` if
+  `GEMINI_API_KEY` isn't set. See "Cloud Vision board scan" below.
 
 See "Rooms & realtime multiplayer" below for the WebSocket half and what
 `state` (`RoomStateSnapshot`) looks like.
@@ -145,6 +144,43 @@ instance B. Horizontally scaling this needs a shared store (Redis pub/sub
 for cross-instance Socket.io broadcast at minimum, `@socket.io/redis-adapter`
 is the standard fit) - out of scope for this pass.
 
+## Cloud Vision board scan
+
+`POST /api/v1/vision/scan` reads a Xiangqi board photo into a FEN using
+Google Gemini's vision API. `src/vision/visionProvider.ts` defines a
+`VisionProvider` interface (`analyzeBoardPhoto(imageBytes, mimeType) ->
+{fen, confidence}`) so the concrete provider is swappable and fakeable in
+tests, same pattern as `PikafishPool`; `src/vision/geminiVisionProvider.ts`
+is the real implementation, `src/vision/fakeVisionProvider.ts` a
+deterministic stand-in used only in tests.
+
+Set `GEMINI_API_KEY` (get one at https://aistudio.google.com/apikey) to
+enable it - `index.ts` constructs a `GeminiVisionProvider` only when that's
+set, otherwise the route always responds `501 not_implemented` so the
+contract is stable either way. `GEMINI_MODEL` (default
+`gemini-flash-latest`) picks the model; `VISION_MAX_IMAGE_BYTES` (default
+8MB) caps the upload.
+
+The returned `fen` is checked structurally (`isPlausibleXiangqiFen`, the
+same validator `/engine/analyze` uses) before it's sent back - a
+malformed response from the model becomes a clean `502
+vision_provider_error` rather than propagating garbage to the client.
+That check earned its keep during development: a synthetic board image
+sent through the real endpoint (directly, and again through the full
+`docker compose` stack) came back as an exact FEN match on one run and a
+piece-transposition error on another - both on the *same* standard
+starting position, both reported at confidence `1.0` - and a sparse/
+asymmetric custom position tripped up more than one model into returning
+a structurally invalid FEN, which this check caught. So neither "it's the
+standard position" nor "confidence is 1.0" is a reason to trust a scan
+blindly. **The client never treats a scan result as ground truth** - it
+always lands in the board
+editor for review with the confidence score shown, which is the real
+reason Phase 5 built the board-correction UI first and wired scanning
+into it rather than having a scan start a game directly. See
+`RULES_ENGINE.md`'s "Cloud Vision board scan" section for the client side
+of this and the full verification writeup.
+
 ## Xiangqi rules engine (server-authoritative)
 
 `src/xiangqi/` is a TypeScript port of the client's entire
@@ -190,6 +226,13 @@ also driven manually with a real Flutter/Dart `socket_io_client` during
 development - see `RULES_ENGINE.md`'s "Online Multiplayer" section for the
 one gotcha that manual pass caught that no automated test here would have
 (a client-side connection-caching issue, fixed with `enableForceNew()`).
+
+`test/vision/geminiVisionProvider.test.ts` mocks `fetch` to test request
+construction and error handling without calling the real API;
+`test/routes/vision.routes.test.ts` uses `FakeVisionProvider` for the same
+reason at the route level. The real Gemini API was called manually during
+development with a real `GEMINI_API_KEY` - see `RULES_ENGINE.md`'s "Cloud
+Vision board scan" section for what that found.
 
 Known: `npm audit` flags moderate/high advisories in `vitest`'s `vite`/
 `esbuild` dev-server dependencies. These are dev-only tooling (never

@@ -299,8 +299,57 @@ reasoned through on its own** - a shared clear flag should only ever gate
 the one field it's actually about, never a neighboring field, no matter how
 related the two look.
 
-Cloud Vision board scanning (photo → FEN) is deliberately not implemented
-this pass - see `backend/src/routes/vision.routes.ts`'s TODO for the
-planned shape (a swappable `VisionProvider` interface) once a provider and
-API key are chosen. `POST /api/v1/vision/scan` currently always responds
-`501`, and there's no camera-capture UI in the Flutter client yet.
+### Cloud Vision board scan (photo → FEN)
+
+Implemented against Google Gemini once a `GEMINI_API_KEY` became
+available. `backend/src/vision/visionProvider.ts` is a `VisionProvider`
+interface (`analyzeBoardPhoto(imageBytes, mimeType) -> {fen, confidence}`)
+so the concrete provider is swappable/fakeable, the same pattern as
+`PikafishPool`/`EngineCoachRepository`;
+`backend/src/vision/geminiVisionProvider.ts` calls Gemini's
+`generateContent` with the photo as inline base64 data and a
+`responseSchema` requesting structured `{fen, confidence}` JSON back,
+rather than parsing free-form text. `POST /api/v1/vision/scan` (auth
+required, raw image bytes as the body - not multipart, since it's always
+exactly one file with no other fields) 501s if no key is configured, so
+the contract is identical whether or not Cloud Vision is enabled in a
+given environment. Also validates the returned FEN structurally
+(`isPlausibleXiangqiFen`) before handing it to the client, so a bad model
+response becomes a clean `502 vision_provider_error` instead of silently
+propagating garbage.
+
+**Real end-to-end verification, not just mocked tests**: a synthetic board
+diagram (rendered with Python/Pillow, not a real camera photo - this
+sandbox has no camera) was sent through the live endpoint, spawned
+directly and again through the full `docker compose` stack. Results
+varied even for the same standard starting position: one run came back as
+an *exact* FEN match at confidence `1.0`; a second run (through Docker)
+also reported confidence `1.0` but had transposed the elephant and advisor
+on Black's back rank (`rnabkabnr` instead of `rnbakabnr`) - so **the
+confidence score is not reliably calibrated**, and a high score is not
+itself a reason to skip review. A sparse, asymmetric custom position fared
+worse: `gemini-flash-latest` hit a transient `503` overload during
+testing, and `gemini-2.5-flash` returned a structurally malformed 9-rank
+FEN, caught and rejected by the structural validator above rather than
+passed through. **Conclusion baked into the design**: never treat a scan
+result - or its confidence score - as ground truth.
+`BoardEditorController.scanPhoto` always routes the result through the
+*existing* board editor for review (exactly the "interactive board
+correction UI" the product spec called for) rather than starting a game
+directly, and the UI surfaces the provider's own confidence score
+alongside a "check every piece" prompt regardless of how high it is.
+
+This is also why `scanPhoto` never introduced a separate "vision session" -
+it reuses the same `AuthRepository`/guest-login flow Online Match already
+has (`BoardEditorController` lazily logs in as a guest exactly once,
+cached for the life of the controller) purely because the backend requires
+auth on this endpoint to bound abuse of a billed external API, not because
+board setup has any other need for an account.
+
+Flutter's `lib/data/repositories/vision_repository.dart`
+(`HttpVisionRepository`) posts the raw image bytes with a `Content-Type`
+derived from the picked file's extension and the guest JWT as a bearer
+token; `image_picker` (with `NSCameraUsageDescription`/
+`NSPhotoLibraryUsageDescription` on iOS and a `CAMERA` permission on
+Android - see those platform manifests) supplies the camera/gallery photo
+in `board_setup_screen.dart`.
