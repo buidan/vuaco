@@ -1,9 +1,11 @@
-# Vuaco Backend (Phase 2)
+# Vuaco Backend (Phases 2 & 4)
 
-REST API skeleton + an isolated Pikafish (Xiangqi engine) wrapper, per
-[`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md). This is the only part of
-the system that ever talks to Pikafish - the Flutter client only ever calls
-this backend's own REST endpoints.
+REST + WebSocket API per [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md):
+an isolated Pikafish (Xiangqi engine) wrapper for the Engine Coach (Phase 2),
+and guest auth + server-authoritative online multiplayer rooms (Phase 4).
+This is the only part of the system that ever talks to Pikafish, and the
+only thing that ever validates a multiplayer move - the Flutter client only
+ever calls this backend's own REST/WebSocket API.
 
 ## GPL isolation
 
@@ -70,17 +72,93 @@ location (`/opt/pikafish/pikafish`), which doesn't exist on the host. Either:
   multiPv, depth, scoreType: "cp"|"mate", scoreValue, pvMoves }] }`, ranked
   best (`multiPv: 1`) first. `fen` must use the same convention as the
   client's `lib/domain/fen/fen_codec.dart` - see `src/utils/fen.ts`.
+- `POST /api/v1/auth/guest` - body `{ username }` -> `{ token, user: { id,
+  username, elo } }`. See "Auth" below.
+- `POST /api/v1/rooms` (auth required) - body `{ timeControlMinutes?,
+  incrementSeconds? }` -> `{ roomId, pin, shareLink, state }`.
+- `POST /api/v1/rooms/join` (auth required, Redis-rate-limited) - body
+  `{ pin }` -> `{ state }`.
+- `GET /api/v1/rooms/:id` (auth required) -> `{ state }`.
 
-Socket.io is initialized (see `src/websocket/socket.ts`) but has no
-events/namespaces yet - that's Phase 4 (online multiplayer).
+See "Rooms & realtime multiplayer" below for the WebSocket half and what
+`state` (`RoomStateSnapshot`) looks like.
+
+## Auth
+
+`POST /api/v1/auth/guest` is the only auth flow implemented - no password,
+no refresh token. Every call creates a **brand-new** user row (see
+`src/auth/userStore.ts`); it is not "log in as an existing username", since
+there's nothing to prove ownership of one. This is deliberately minimal:
+good enough to give multiplayer rooms a stable user identity without
+building a full account system before it's needed. `src/auth/jwt.ts` signs
+a long-lived (`JWT_EXPIRES_IN`, default 30d) token carrying `{ sub, username
+}`; `src/auth/authMiddleware.ts`'s `requireAuth` verifies it for REST routes,
+and `websocket/roomsGateway.ts` verifies the same token during the socket
+handshake (`socket.handshake.auth.token`). **Set `JWT_SECRET` in any shared
+or deployed environment** - the default in `config/index.ts` is an
+insecure, obviously-named placeholder for solo local dev only.
+
+## Rooms & realtime multiplayer
+
+`src/rooms/roomManager.ts`'s `RoomManager` owns every live room's
+authoritative game state in memory (one process, not sharded across
+instances - see "Scaling" below) and is the only thing that ever validates
+a multiplayer move, via its own TypeScript port of the client's rules
+engine at `src/xiangqi/` (see "Xiangqi rules engine" below). Postgres only
+stores durable metadata (`rooms`/`matches` tables) - `RoomManager` writes a
+room row on create/join and a match row once a game ends.
+
+Room codes are 6-character alphanumeric (`src/rooms/pin.ts`, excluding
+visually ambiguous characters like `0`/`O`/`1`/`I`), created via REST and
+then joined live over Socket.io:
+
+1. `POST /rooms` (host) / `POST /rooms/join` (guest) - creates or joins the
+   Postgres room row and the in-memory `RoomRuntime`.
+2. Client connects a socket with the same JWT, then emits `room:join`
+   `{ roomId }` (ack `{ ok, state? }`) to attach that connection to the
+   room's Socket.io room (`io.to(roomId)`) - only the two participants can
+   attach; everyone else gets `{ ok: false, error: 'not_a_participant' }`.
+3. `move:make` `{ roomId, from: {row,col}, to: {row,col} }` (ack `{ ok,
+   error?, message? }`) - validated by `RoomManager.makeMove` against the
+   room's `XiangqiEngine`. Whether accepted or not, an ack goes only to the
+   sender; on any accepted change (join, move, clock timeout),
+   `RoomManager` emits `'roomUpdated'` and every socket in the room
+   receives a fresh full `room:state` broadcast (`RoomStateSnapshot`) -
+   deliberately whole-state, not deltas, since a Xiangqi position is small
+   and this is much harder to get subtly wrong than delta reconstruction.
+
+Clocks (`src/rooms/clock.ts`) are enforced server-side: `RoomManager`
+deducts elapsed wall-clock time from the mover's clock on every move
+attempt, and a single interval (`RoomManager.startClockLoop`, one timer for
+all rooms, not one per room) periodically checks every timed room's
+side-to-move for a flag-fall even if nobody moves.
+
+**Scaling note**: because `RoomManager` state is in-process memory, running
+more than one backend instance would split rooms across instances with no
+way for a client connected to instance A to reach a room created on
+instance B. Horizontally scaling this needs a shared store (Redis pub/sub
+for cross-instance Socket.io broadcast at minimum, `@socket.io/redis-adapter`
+is the standard fit) - out of scope for this pass.
+
+## Xiangqi rules engine (server-authoritative)
+
+`src/xiangqi/` is a TypeScript port of the client's entire
+`lib/domain/{models,rules,fen,notation,engine}` - same files, same function
+names, ported 1:1 on purpose so the two are easy to keep in sync. If you
+change a rule (or fix a bug) in one, make the matching change in the other;
+`test/xiangqi/*.test.ts` mirrors the Dart test suite's key cases (piece
+movement edge cases, flying general, check/checkmate, FEN round-trip) so a
+divergence should show up as a failing test on whichever side you forgot.
+See `RULES_ENGINE.md` (client-side) for the domain layer's own
+documentation - it applies here too, module-for-module.
 
 ## Data model / migrations
 
 `migrations/*.sql` are applied in filename order by `npm run migrate`
 (tracked in a `schema_migrations` table, no down-migrations). `0001_init.sql`
-creates the `users`/`matches`/`rooms` skeleton from
-`docs/ARCHITECTURE.md` section 6 - expand these as later phases need real
-columns (auth in particular is still TBD, see that doc's section 3).
+creates the `users`/`matches`/`rooms` skeleton from `docs/ARCHITECTURE.md`
+section 6; `0002_rooms_multiplayer.sql` (Phase 4) adds `rooms.guest_id` and
+`rooms.match_id`.
 
 ## Tests
 
@@ -96,6 +174,17 @@ it. The real binary was exercised manually end-to-end during development
 (spawned directly, then through the full `docker compose` stack) - see the
 git history / PR description for that session rather than re-deriving it
 here.
+
+`test/rooms/roomManager.test.ts` exercises room create/join/move/clock-
+timeout/match-persistence logic against a mocked Postgres pool.
+`test/websocket/roomsGateway.test.ts` spins up a real `http.Server` +
+Socket.io server and a real `socket.io-client`, so it's the one test that
+actually exercises the JWT-handshake-auth and room-broadcast wiring
+end-to-end rather than through mocks. The real backend (Docker stack) was
+also driven manually with a real Flutter/Dart `socket_io_client` during
+development - see `RULES_ENGINE.md`'s "Online Multiplayer" section for the
+one gotcha that manual pass caught that no automated test here would have
+(a client-side connection-caching issue, fixed with `enableForceNew()`).
 
 Known: `npm audit` flags moderate/high advisories in `vitest`'s `vite`/
 `esbuild` dev-server dependencies. These are dev-only tooling (never
