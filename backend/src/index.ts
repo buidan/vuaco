@@ -5,6 +5,7 @@ import { createRedisClient } from './cache/redis';
 import { config } from './config';
 import { createDbPool } from './db/pool';
 import { PikafishPool } from './engine/pikafishPool';
+import { RoomManager } from './rooms/roomManager';
 import { attachSocketServer } from './websocket/socket';
 
 async function main(): Promise<void> {
@@ -23,9 +24,12 @@ async function main(): Promise<void> {
   await pool.start();
   console.log('Pikafish pool ready.');
 
-  const app = createApp({ db, redis, pool });
+  const roomManager = new RoomManager(db, config.clockTickIntervalMs);
+  roomManager.startClockLoop();
+
+  const app = createApp({ db, redis, pool, roomManager });
   const httpServer = createServer(app);
-  attachSocketServer(httpServer, config.corsOrigin);
+  attachSocketServer(httpServer, config.corsOrigin, roomManager);
 
   httpServer.listen(config.port, () => {
     console.log(`vuaco backend listening on :${config.port} (${config.env})`);
@@ -34,6 +38,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string) => {
     console.log(`${signal} received, shutting down...`);
     httpServer.close();
+    roomManager.stopClockLoop();
     await pool.stop();
     await db.end();
     redis.disconnect();

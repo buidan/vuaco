@@ -8,13 +8,17 @@ import { config } from './config';
 import { PikafishPool } from './engine/pikafishPool';
 import { errorHandler } from './middleware/errorHandler';
 import { apiRateLimiter } from './middleware/rateLimiter';
+import { RoomManager } from './rooms/roomManager';
+import { createAuthRouter } from './routes/auth.routes';
 import { createEngineRouter } from './routes/engine.routes';
 import { createHealthRouter } from './routes/health.routes';
+import { createRoomsRouter } from './routes/rooms.routes';
 
 export interface AppDependencies {
   db: Pool;
   redis: Redis;
   pool: PikafishPool;
+  roomManager: RoomManager;
 }
 
 export function createApp(deps: AppDependencies): Express {
@@ -32,6 +36,8 @@ export function createApp(deps: AppDependencies): Express {
 
   app.use('/api/v1', createHealthRouter(deps));
   app.use('/api/v1', createEngineRouter(deps.pool));
+  app.use('/api/v1', createAuthRouter(deps.db));
+  app.use('/api/v1', createRoomsRouter(deps.roomManager, deps.redis));
 
   app.use((_req, res) => {
     res.status(404).json({ error: 'not_found' });
