@@ -34,7 +34,7 @@ The Pikafish chess engine is GPL-3.0 licensed. To keep the app proprietary:
 | Cache / Room State | Redis | Active room state, matchmaking, rate limiting |
 | Vision (v1) | Cloud Vision API (GPT-4o / Gemini) | Photo → FEN |
 | Vision (v2, later) | Local ONNX/TFLite model | Only after v1 proves demand; separate effort with its own data pipeline |
-| Auth | TBD — decide before Phase 4 (multiplayer/friends) | Needed for username search & invites |
+| Auth | Guest JWT (Phase 4) | No password/refresh flow yet - every login creates a fresh guest user; see backend/README.md |
 
 ## 4. High-Level System Diagram (textual)
 
@@ -53,12 +53,17 @@ Flutter Client
 The **rules engine** (move validation, check/checkmate detection, FEN parsing) 
 is pure Dart, lives in the client's domain layer, and has no dependency on the 
 backend — it must work fully offline for Pass & Play. The backend has its own 
-move-validation logic in Phase 4+ for server-authoritative multiplayer (client 
-validation is for UX responsiveness only; never trust the client for match results).
+independent TypeScript port of the same rules (`backend/src/xiangqi/`, see
+backend/README.md) for server-authoritative multiplayer, added in Phase 4
+(client validation is for UX responsiveness only; never trust the client for
+match results). The two implementations are deliberately kept structurally
+parallel (same file names/functions, ported 1:1) so a rules change is easy to
+apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
 
 ## 5. API Contract Conventions (established in Phase 2, referenced after)
 - Base path: `/api/v1/`
-- Auth: TBD, likely JWT bearer tokens once decided
+- Auth: `Authorization: Bearer <jwt>`, obtained from `POST /api/v1/auth/guest`
+  (implemented; see backend/README.md and section 3 above)
 - Key endpoints (fill in as built):
   - `POST /api/v1/engine/analyze` — body: `{ fen: string, multiPv?: number,
     depth?: number }` → `{ bestMove, ponder?, depthReached, lines: [{
@@ -66,14 +71,35 @@ validation is for UX responsiveness only; never trust the client for match resul
     (implemented; see `backend/README.md`)
   - `GET /api/v1/health` — Postgres/Redis/engine-pool status (implemented)
   - `POST /api/v1/vision/scan` — body: image → returns `{ fen: string, confidence: number }`
-  - `POST /api/v1/rooms` — create private room, returns 6-digit PIN + share link
-  - WebSocket events: TBD, document namespace/event names here once Phase 4 starts
+  - `POST /api/v1/auth/guest` — body: `{ username: string }` → `{ token,
+    user: { id, username, elo } }` (implemented; always creates a fresh
+    guest user, see backend/README.md)
+  - `POST /api/v1/rooms` — body: `{ timeControlMinutes?, incrementSeconds?
+    }` → `{ roomId, pin, shareLink, state: RoomStateSnapshot }` (implemented,
+    requires auth)
+  - `POST /api/v1/rooms/join` — body: `{ pin }` → `{ state: RoomStateSnapshot
+    }` (implemented, requires auth, Redis-rate-limited per section 7)
+  - `GET /api/v1/rooms/:id` — `{ state: RoomStateSnapshot }` (implemented,
+    requires auth)
+- WebSocket events (implemented, Phase 4; see
+  `backend/src/websocket/roomsGateway.ts`). JWT passed via
+  `socket.handshake.auth.token` at connect time, same token as REST.
+  - Client → server: `room:join` `{ roomId }` (ack: `{ ok, state? }`),
+    `move:make` `{ roomId, from: {row,col}, to: {row,col} }` (ack: `{ ok,
+    error?, message? }`)
+  - Server → client: `room:state` (full `RoomStateSnapshot`, broadcast to
+    every socket in the room on any change - join, move, clock timeout)
 
 ## 6. Data Model (high-level, expand in Phase 2+)
 - `User`: id, username, elo, created_at
 - `Match`: id, player_red_id, player_black_id, result, move_history, created_at
-- `Room`: id, pin, host_id, status, timer_settings
-- Full schema to be defined in Phase 2 backend prompt.
+- `Room`: id, pin, host_id, guest_id, status, timer_settings, match_id
+  (`guest_id`/`match_id` added in Phase 4 - see
+  `backend/migrations/0002_rooms_multiplayer.sql`)
+- Live game state (board, clock) is NOT in Postgres - it lives in the
+  backend's in-memory `RoomManager` for as long as the room is active, and
+  a `Match` row is written once the game ends. See backend/README.md for
+  what this means for horizontal scaling (currently single-process only).
 
 ## 7. Security Notes
 - Room PINs must be rate-limited on join attempts (Redis-backed) to prevent 
@@ -103,7 +129,18 @@ validation is for UX responsiveness only; never trust the client for match resul
   calls) against `kBlunderThresholdCentipawns`. No settings UI yet for the
   backend base URL (hardcoded `http://localhost:3000/api/v1`) - add one
   before this leaves local dev. See RULES_ENGINE.md's "Engine Coach" section.
-- **Phase 4** — Online multiplayer (rooms, WebSocket sync, auth, matchmaking). ⬜
+- **Phase 4** — Online multiplayer (rooms, WebSocket sync, auth, matchmaking). ✅
+  Guest-JWT auth (`POST /auth/guest`), PIN-based rooms (`POST /rooms`,
+  `POST /rooms/join`, Redis-rate-limited per section 7) backed by a
+  TypeScript port of the rules engine (`backend/src/xiangqi/`) for
+  server-authoritative move validation and clock enforcement, synced over
+  Socket.io (`room:join`, `move:make`, `room:state`). Flutter gets a new
+  Online Lobby + Online Match screen (`lib/presentation/screens/`) reusing
+  `XiangqiBoardView` against a server-sent FEN. "Matchmaking" here means
+  PIN-based room joining only - no ranked queue and no username-search
+  friend invite (out of scope for this pass, see RULES_ENGINE.md). No deep
+  link handling for the room share link yet (placeholder `vuaco://` scheme).
+  See RULES_ENGINE.md's "Online Multiplayer" section and backend/README.md.
 - **Phase 5** — FEN import + Cloud Vision board scan + correction UI. ⬜
 - **Phase 6** (later, separate effort) — Local on-device vision model. ⬜
 

@@ -198,3 +198,61 @@ The board overlay (`XiangqiBoardView`'s `candidateMoves` param, drawn by
 passes candidates through when `EngineCoachState.analyzedSide` matches the
 current side to move, so a stale arrow for the position-before-last-move
 never flashes up while a fresh analysis is in flight.
+
+## Online Multiplayer (Phase 4)
+
+The client is never trusted here - the backend has its own independent
+TypeScript port of this entire domain layer at `backend/src/xiangqi/`
+(`board.ts`, `pieceMoves.ts`, `attackDetector.ts`, `legalMoveGenerator.ts`,
+`xiangqiEngine.ts`, `fenCodec.ts`, `moveNotation.ts`), ported 1:1 file-by-file
+from the Dart originals specifically so the two stay easy to keep in sync -
+**if you change a rule here, make the matching change there too** (see
+backend/README.md for that side). The client's own domain layer is still
+used for online play, but only for UX responsiveness: computing legal
+destinations to highlight on tap (`LegalMoveGenerator.legalDestinationsFrom`,
+called from `OnlineMatchController.selectPoint`), never as the source of
+truth for what actually happened.
+
+`lib/domain/models/online_room.dart` (`RoomState`/`RoomPlayerInfo`/
+`RoomClockInfo`) mirrors the backend's `RoomStateSnapshot`
+(`backend/src/rooms/roomManager.ts`) - plain data, no JSON/socket knowledge,
+same split as `EngineAnalysisResult`. Note `RoomState.fen` is decoded with
+the existing `FenCodec.decode` to get a `Board` for rendering - the online
+match screen and Pass & Play's screen both feed `XiangqiBoardView` a `Board`
+regardless of where it came from, they just decode it differently
+(`XiangqiEngine.board` locally vs. `FenCodec.decode(room.fen)` here). This
+extended `GameEndReason` with `timeout`/`resignation` (`game_result.dart`) -
+values only the backend's `RoomManager` ever produces, never the local
+`XiangqiEngine` (no clock UI or resign action there).
+
+`lib/data/repositories/online_match_repository.dart`
+(`SocketIoOnlineMatchRepository`) is the only thing that touches
+`package:socket_io_client` - REST calls (`createRoom`/`joinRoomByPin`) go
+through `package:http` like every other repository here;
+`connectLive`/`joinRoomLive`/`sendMove` are the realtime half, matching
+`backend/src/websocket/roomsGateway.ts`'s events 1:1. **Gotcha found the
+hard way**: `socket_io_client`'s `io()` caches one `Manager` per host:port
+within a process and will silently *share* (and deadlock) a connection
+across two `io()` calls to the same backend unless each call passes
+`enableForceNew()` - `connectLive` always does this, so don't remove it even
+though it looks redundant for the common case of "one connection per app
+instance." This was only caught by a real two-socket smoke test against a
+live backend, not by any mocked unit test - if you touch this file, rerun a
+real end-to-end check (two guest logins, two live connections, one move,
+confirm the other side's `room:state` arrives) rather than trusting the
+fake-repository controller tests alone.
+
+`OnlineMatchController` (`lib/presentation/providers/online_match_providers.dart`)
+never applies a move locally before the server confirms it - `selectPoint`
+only manages tap-to-highlight state and calls `sendMove`; the board only
+actually updates once `roomStateStream` delivers the server's broadcast.
+This also means there's no move-slide animation for online play yet (unlike
+Pass & Play's `TweenAnimationBuilder`) - the board snaps to each new
+`RoomState.fen`, noted in `online_match_screen.dart` as an acceptable
+simplification for this pass.
+
+Deliberately out of scope this pass (see docs/ARCHITECTURE.md Phase 4
+entry): real deep-link handling for the room share link (`shareLink` is a
+placeholder `vuaco://join?pin=...` string, not wired to any platform deep
+link), username-search friend invites, and a ranked matchmaking queue -
+"matchmaking" here is PIN-based room joining only.
