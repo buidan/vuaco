@@ -79,6 +79,11 @@ location (`/opt/pikafish/pikafish`), which doesn't exist on the host. Either:
 - `POST /api/v1/rooms/join` (auth required, Redis-rate-limited) - body
   `{ pin }` -> `{ state }`.
 - `GET /api/v1/rooms/:id` (auth required) -> `{ state }`.
+- `POST /api/v1/vision/scan` - **stub only**, always responds `501
+  not_implemented`. See the TODO comment in `src/routes/vision.routes.ts`
+  for the planned Cloud Vision (photo -> FEN) integration once a provider
+  and API key are chosen; Phase 5 shipped manual FEN paste and the board-
+  correction UI instead (Flutter side).
 
 See "Rooms & realtime multiplayer" below for the WebSocket half and what
 `state` (`RoomStateSnapshot`) looks like.

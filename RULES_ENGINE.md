@@ -256,3 +256,51 @@ entry): real deep-link handling for the room share link (`shareLink` is a
 placeholder `vuaco://join?pin=...` string, not wired to any platform deep
 link), username-search friend invites, and a ranked matchmaking queue -
 "matchmaking" here is PIN-based room joining only.
+
+## Board Setup (Phase 5)
+
+`lib/domain/rules/position_validator.dart` (`PositionValidator`) is the one
+piece of new domain logic - a hand-edited or FEN-imported position can
+consist entirely of individually-legal piece placements and still be
+unplayable, because `AttackDetector`/`LegalMoveGenerator` assume both
+generals exist (`Board.findGeneral` returning null is only handled
+gracefully in a couple of places, not everywhere). `reasonPositionIsUnplayable`
+is the only check this phase enforces - it does not, and should not, enforce
+standard piece counts or symmetry, which are legitimate to deviate from in
+a hand-set-up puzzle position.
+
+`lib/presentation/providers/board_editor_providers.dart`
+(`BoardEditorController`/`BoardEditorState`) is entirely separate from
+`GameControllerState` - editing has no turns, legal-move highlighting, or
+history. `PassAndPlayRepository.createNewGame` gained optional
+`board`/`sideToMove` parameters, and `GameController.startFromPosition`
+hands the edited (or FEN-loaded) position to a fresh `XiangqiEngine` the
+same way `GameController.newGame` does for the standard position - once a
+game starts, Pass & Play doesn't know or care whether it began from
+`Board.initial()` or a hand-edited position.
+
+`lib/presentation/widgets/board_editor_view.dart` (`BoardEditorView`) and
+`piece_palette.dart` (`PiecePalette`) are new, thinner siblings of
+`XiangqiBoardView`/`PieceDisc` - editing has no move animation, check
+highlighting, or legal-destination markers, so reusing `XiangqiBoardView`
+directly would mean stripping features back out. They do share
+`BoardGridPainter` (made public from `xiangqi_board_view.dart` for this
+reason) and `PieceDisc`, so the two boards still look identical.
+
+**Found by test, not by inspection**: `BoardEditorState.copyWith`'s first
+draft had the exact same "a boolean 'clear' flag silently overrides an
+explicitly-passed value" bug as `OnlineMatchState.copyWith` did in Phase 4
+(`clearPaletteSelection: true` was forcing `eraserSelected` back to `false`
+even when the caller explicitly passed `eraserSelected: true`) - two
+independent instances of the same Dart `copyWith` footgun in two phases is
+a pattern worth remembering: **when a copyWith takes both a value parameter
+and a same-concept "clear" boolean, each field's null-handling needs to be
+reasoned through on its own** - a shared clear flag should only ever gate
+the one field it's actually about, never a neighboring field, no matter how
+related the two look.
+
+Cloud Vision board scanning (photo → FEN) is deliberately not implemented
+this pass - see `backend/src/routes/vision.routes.ts`'s TODO for the
+planned shape (a swappable `VisionProvider` interface) once a provider and
+API key are chosen. `POST /api/v1/vision/scan` currently always responds
+`501`, and there's no camera-capture UI in the Flutter client yet.

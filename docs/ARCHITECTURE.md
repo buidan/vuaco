@@ -70,7 +70,11 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
     multiPv, depth, scoreType: "cp"|"mate", scoreValue, pvMoves }] }`
     (implemented; see `backend/README.md`)
   - `GET /api/v1/health` — Postgres/Redis/engine-pool status (implemented)
-  - `POST /api/v1/vision/scan` — body: image → returns `{ fen: string, confidence: number }`
+  - `POST /api/v1/vision/scan` — body: image → returns `{ fen: string,
+    confidence: number }`. **Stub only** (responds `501 not_implemented`) -
+    Phase 5 shipped manual FEN paste + the board-correction UI instead; see
+    the TODO in `backend/src/routes/vision.routes.ts` for the planned
+    `VisionProvider` shape once a Cloud Vision provider/API key is chosen.
   - `POST /api/v1/auth/guest` — body: `{ username: string }` → `{ token,
     user: { id, username, elo } }` (implemented; always creates a fresh
     guest user, see backend/README.md)
@@ -141,7 +145,16 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
   friend invite (out of scope for this pass, see RULES_ENGINE.md). No deep
   link handling for the room share link yet (placeholder `vuaco://` scheme).
   See RULES_ENGINE.md's "Online Multiplayer" section and backend/README.md.
-- **Phase 5** — FEN import + Cloud Vision board scan + correction UI. ⬜
+- **Phase 5** — FEN import + Cloud Vision board scan + correction UI. 🚧
+  Manual FEN paste and the interactive board-correction UI are done
+  (`BoardSetupScreen`/`BoardEditorController` in `lib/presentation/`, a new
+  `PositionValidator` domain check that both generals exist before a
+  position can be played). Cloud Vision photo scan is deliberately
+  deferred - no provider/API key decision made yet - so `POST
+  /api/v1/vision/scan` is a `501` stub and there's no camera-capture UI.
+  See RULES_ENGINE.md's "Board Setup" section and the TODO in
+  `backend/src/routes/vision.routes.ts` for what's planned when that
+  decision is made.
 - **Phase 6** (later, separate effort) — Local on-device vision model. ⬜
 
 Update the checkboxes/status as phases complete. Each phase's implementation 
