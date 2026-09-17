@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'board_setup_screen.dart';
 import 'online_lobby_screen.dart';
 import 'pass_and_play_screen.dart';
 
@@ -43,6 +44,16 @@ class HomeScreen extends StatelessWidget {
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                     child: Text('Play Online'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BoardSetupScreen()),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    child: Text('Set Up Position'),
                   ),
                 ),
               ],
