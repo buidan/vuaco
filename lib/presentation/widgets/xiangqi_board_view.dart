@@ -73,6 +73,77 @@ class BoardLayout {
   }
 }
 
+/// One Engine Coach candidate move to draw as an arrow, ranked 1 (best) up.
+class CandidateMoveArrow {
+  final BoardPoint from;
+  final BoardPoint to;
+  final int rank;
+
+  const CandidateMoveArrow({required this.from, required this.to, required this.rank});
+}
+
+class _CandidateArrowsPainter extends CustomPainter {
+  final BoardLayout layout;
+  final List<CandidateMoveArrow> candidates;
+
+  _CandidateArrowsPainter({required this.layout, required this.candidates});
+
+  static const List<Color> _rankColors = [
+    XiangqiColors.gold,
+    XiangqiColors.jade,
+    XiangqiColors.crimson,
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final candidate in candidates) {
+      final color = _rankColors[(candidate.rank - 1).clamp(0, _rankColors.length - 1)];
+      final opacity = candidate.rank == 1 ? 0.85 : 0.55;
+      _drawArrow(
+        canvas,
+        layout.pointToOffset(candidate.from),
+        layout.pointToOffset(candidate.to),
+        color.withValues(alpha: opacity),
+        strokeWidth: candidate.rank == 1 ? 5 : 3.5,
+        headSize: layout.cellSize * 0.22,
+      );
+    }
+  }
+
+  void _drawArrow(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    Color color, {
+    required double strokeWidth,
+    required double headSize,
+  }) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(from, to, paint);
+
+    final angle = (to - from).direction;
+    final headPaint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(to.dx, to.dy)
+      ..lineTo(
+        to.dx - headSize * math.cos(angle - math.pi / 7),
+        to.dy - headSize * math.sin(angle - math.pi / 7),
+      )
+      ..lineTo(
+        to.dx - headSize * math.cos(angle + math.pi / 7),
+        to.dy - headSize * math.sin(angle + math.pi / 7),
+      )
+      ..close();
+    canvas.drawPath(path, headPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CandidateArrowsPainter oldDelegate) => oldDelegate.candidates != candidates;
+}
+
 class _BoardGridPainter extends CustomPainter {
   final BoardLayout layout;
   final BoardPoint? selected;
@@ -263,6 +334,7 @@ class XiangqiBoardView extends StatelessWidget {
   final bool blackInCheck;
   final Move? lastMove;
   final int moveSerial;
+  final List<CandidateMoveArrow> candidateMoves;
   final void Function(BoardPoint point) onTapPoint;
 
   const XiangqiBoardView({
@@ -275,6 +347,7 @@ class XiangqiBoardView extends StatelessWidget {
     required this.lastMove,
     required this.moveSerial,
     required this.onTapPoint,
+    this.candidateMoves = const [],
   });
 
   @override
@@ -334,6 +407,16 @@ class XiangqiBoardView extends StatelessWidget {
                 child: PieceDisc(piece: movedPiece, size: pieceSize),
               ));
             }
+          }
+
+          if (candidateMoves.isNotEmpty) {
+            children.add(Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _CandidateArrowsPainter(layout: layout, candidates: candidateMoves),
+                ),
+              ),
+            ));
           }
 
           return GestureDetector(
