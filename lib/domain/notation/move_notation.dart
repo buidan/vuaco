@@ -16,4 +16,25 @@ class MoveNotation {
     if (isCheck) return '$base+';
     return base;
   }
+
+  /// Parses a bare square label like "e3" (no separator) - the format UCI
+  /// engines such as Pikafish use, which happens to match [squareLabel]'s
+  /// own alphabet (file a-i, rank 0-9).
+  static BoardPoint parseSquare(String label) {
+    if (label.length < 2) {
+      throw FormatException('Invalid square label "$label"');
+    }
+    final col = label.codeUnitAt(0) - 97; // 'a' = 0
+    final row = int.parse(label.substring(1));
+    return BoardPoint(row, col);
+  }
+
+  /// Parses a UCI coordinate move such as "e3e4" (always exactly two
+  /// concatenated square labels - Xiangqi has no promotion suffix).
+  static (BoardPoint from, BoardPoint to) parseUciMove(String move) {
+    if (move.length != 4) {
+      throw FormatException('Invalid UCI move "$move"');
+    }
+    return (parseSquare(move.substring(0, 2)), parseSquare(move.substring(2, 4)));
+  }
 }
