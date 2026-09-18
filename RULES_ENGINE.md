@@ -353,3 +353,45 @@ token; `image_picker` (with `NSCameraUsageDescription`/
 `NSPhotoLibraryUsageDescription` on iOS and a `CAMERA` permission on
 Android - see those platform manifests) supplies the camera/gallery photo
 in `board_setup_screen.dart`.
+
+## Play vs Computer
+
+Not one of the original phases - added after the fact once the app had
+Pass & Play, Engine Coach, and Online Multiplayer but no way to just play
+a single-player game against something. Deliberately reuses rather than
+duplicates: the "AI" is the same Pikafish behind `POST /api/v1/engine/analyze`
+that the Engine Coach already calls for move suggestions, just now asked
+for exactly one best move (`multiPv: 1`) and told to actually play it
+instead of only displaying it as a candidate arrow. `lib/domain/models/
+ai_difficulty.dart` (`AiDifficulty.easy/medium/hard`) is nothing more than
+a UI-facing label mapped to a Pikafish search `depth` (4/10/18), capped
+well under the backend's `PIKAFISH_MAX_DEPTH`.
+
+`AiMatchController` (`lib/presentation/providers/ai_opponent_providers.dart`)
+drives the game via `ref.listen` on a *second, independent* `GameController`
+instance - `aiMatchGameControllerProvider`, the same class as the Pass & Play
+`gameControllerProvider` but a distinct provider - so starting or playing an
+AI match can never read or clobber whatever Pass & Play game happens to be
+in progress elsewhere in the widget tree. Whenever the listened position
+changes and it isn't the human's turn, it calls `analyze()` and applies the
+returned UCI best-move string via `GameController.applyMove` (parsed with
+the existing `MoveNotation.parseUciMove` - the same parser Engine Coach's
+candidate-arrow overlay already used, just now to actually move a piece
+instead of just drawing one).
+
+`GameController` gained `applyMove(from, to)` (a select-free sibling of
+`tapPoint` for a caller that already knows the exact move) and a `canUndo`
+getter, both used only by the AI opponent - `tapPoint`'s own two-step
+select-then-destination flow still drives Pass & Play and the human's side
+of an AI match unchanged. `AiMatchController.undoHumanMove` undoes two
+plies (the human's move and the AI's reply to it) so the human always lands
+back on their own turn rather than bouncing straight into another AI move;
+if there's only one ply (the AI's own opening move, before the human has
+moved yet), the single undo hands the turn straight back to the AI, whose
+listener fires again immediately and it just replays - a safe no-op from
+the human's point of view, covered explicitly in
+`test/presentation/ai_opponent_controller_test.dart` since it's the one
+non-obvious edge case in this logic.
+
+No new backend or auth surface was needed - `engineCoachRepositoryProvider`
+(no auth required) is reused as-is.

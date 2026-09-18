@@ -165,6 +165,15 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
   isn't just defensive, it's necessary. Camera/gallery capture uses
   `image_picker`; the endpoint gracefully 501s if no `GEMINI_API_KEY` is
   configured.
+- **Post-Phase addition** — Play vs Computer. ✅
+  Not in the original phase plan - added once the app had Pass & Play,
+  Engine Coach, and Online Multiplayer but no single-player mode. Reuses
+  the Phase 2 `/engine/analyze` endpoint (the same one Engine Coach calls)
+  to actually play a side rather than just suggest moves, at a search
+  depth set by a new Easy/Medium/Hard picker
+  (`lib/domain/models/ai_difficulty.dart`). New setup + match screens let
+  the player choose Red or Black before starting. No new backend surface.
+  See RULES_ENGINE.md's "Play vs Computer" section.
 - **Phase 6** (later, separate effort) — Local on-device vision model. ⬜
 
 Update the checkboxes/status as phases complete. Each phase's implementation 
