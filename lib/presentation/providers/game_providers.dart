@@ -104,6 +104,22 @@ class GameController extends Notifier<GameControllerState> {
     }
   }
 
+  /// Applies a move directly, with no selection step - for a caller that
+  /// already knows the exact move (the "Play vs Computer" AI opponent),
+  /// as opposed to [tapPoint]'s select-then-tap-destination UI flow.
+  /// Returns whether the move was legal and applied.
+  bool applyMove(BoardPoint from, BoardPoint to) {
+    if (!state.result.isOngoing) return false;
+    final validation = _engine.tryMove(from, to);
+    if (validation is LegalMove) {
+      state = _stateFromEngine(lastMove: validation.move);
+      return true;
+    }
+    return false;
+  }
+
+  bool get canUndo => _engine.canUndo;
+
   void undo() {
     if (_engine.undo()) state = _stateFromEngine();
   }
