@@ -27,16 +27,43 @@ to "Flutter app" below and you can ignore the backend section entirely.
 - **Flutter SDK** (this project targets Dart `^3.12.2` per `pubspec.yaml`;
   `flutter --version` should report a matching Dart version). Install via
   https://docs.flutter.dev/get-started/install if you don't have it.
-- **A place to run the app**: Xcode (iOS simulator/macOS desktop) or
-  Android Studio (Android emulator) set up per `flutter doctor`, or just a
-  physical device with developer mode enabled. `flutter devices` lists
-  what's available.
+- **A place to run the app**: see "Setting up a device" right below -
+  `flutter doctor` and `flutter devices` tell you what's already usable.
 - **Docker Desktop** (or another Docker-compatible runtime) - only needed
-  if you want Engine Coach or Play Online, since the backend's Pikafish
-  build and Postgres/Redis run in containers.
+  if you want Engine Coach, Play Online, or the Cloud Vision board scan,
+  since the backend's Pikafish build and Postgres/Redis run in containers.
 - **Node.js 20+** - only needed if you want to run the backend directly on
   your host instead of in Docker (faster iteration, but see the Pikafish
   caveat below).
+
+### Setting up a device
+
+Run `flutter doctor` first - it tells you exactly what's missing for each
+platform. In order of least to most setup:
+
+- **Android emulator (usually fastest if Android Studio is already
+  installed)**: `flutter emulators` lists any AVD you've already created
+  in Android Studio - if one's listed, `flutter emulators --launch <id>`
+  starts it, no further setup needed. If none is listed, create one in
+  Android Studio (More Actions -> Virtual Device Manager -> Create Device)
+  or via `flutter emulators --create`. The emulator's built-in webcam can
+  stand in for a real camera when testing the board-scan photo flow.
+- **Physical Android device**: enable Developer Options + USB debugging on
+  the phone, plug it in via USB, accept the debugging prompt - it then
+  shows up in `flutter devices`.
+- **iOS Simulator or macOS desktop build**: needs the **full Xcode app**
+  (not just the Command Line Tools - `flutter doctor` says "Xcode
+  installation is incomplete" if you only have those). Install Xcode from
+  the App Store (it's large, plan for a while), then run the two commands
+  `flutter doctor` prints (`sudo xcode-select --switch
+  /Applications/Xcode.app/Contents/Developer` and `sudo xcodebuild
+  -runFirstLaunch`). You'll also need **CocoaPods** (`brew install
+  cocoapods` is simplest) - this project's `image_picker` dependency
+  (photo scan) has native iOS/macOS code that needs Pods to link, so a
+  build will fail without it even once Xcode itself is set up.
+- **Chrome (web)**: install Chrome normally, or point `flutter doctor` at
+  another Chromium build via the `CHROME_EXECUTABLE` environment variable.
+  Not a primary target for this app, but it works for a quick look.
 
 ## 2. Backend
 

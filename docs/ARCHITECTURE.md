@@ -133,8 +133,11 @@ apply to both - see RULES_ENGINE.md's "Online Multiplayer" section.
   position changes; candidate lines render as ranked arrows on the board,
   and blunders are flagged by diffing consecutive analyses (no extra API
   calls) against `kBlunderThresholdCentipawns`. No settings UI yet for the
-  backend base URL (hardcoded `http://localhost:3000/api/v1`) - add one
-  before this leaves local dev. See RULES_ENGINE.md's "Engine Coach" section.
+  backend base URL - `backend_config_providers.dart` picks `10.0.2.2` on
+  Android (the emulator's alias for the host) and `localhost` everywhere
+  else, which covers local dev but not a physical device on another
+  machine or a real deployment - add a settings UI before this leaves
+  local dev. See RULES_ENGINE.md's "Engine Coach" section.
 - **Phase 4** — Online multiplayer (rooms, WebSocket sync, auth, matchmaking). ✅
   Guest-JWT auth (`POST /auth/guest`), PIN-based rooms (`POST /rooms`,
   `POST /rooms/join`, Redis-rate-limited per section 7) backed by a
